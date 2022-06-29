@@ -10,6 +10,13 @@ from .player import BridgePlayer
 from .utils.bridge_card import BridgeCard
 
 
+'''
+Re-assignment of old cards:
+
+1. Random extract n cards from stock file
+2. and give it a particular player
+'''
+
 class BridgeDealer:
     ''' Initialize a BridgeDealer dealer class
     '''
@@ -17,8 +24,14 @@ class BridgeDealer:
         ''' set shuffled_deck, set stock_pile
         '''
         self.np_random = np_random
+        
+        # 1. Create a deck
         self.shuffled_deck: List[BridgeCard] = BridgeCard.get_deck()  # keep a copy of the shuffled cards at start of new hand
+            
+        # 2. Shuffle the deck
         self.np_random.shuffle(self.shuffled_deck)
+        
+        # 3. Shuffled deck is stock pile
         self.stock_pile: List[BridgeCard] = self.shuffled_deck.copy()
 
     def deal_cards(self, player: BridgePlayer, num: int):
@@ -28,5 +41,7 @@ class BridgeDealer:
             player (BridgePlayer): The BridgePlayer object
             num (int): The number of cards to be dealt
         '''
+        
+        # Give 3 cards from stock pile to a particular player
         for _ in range(num):
             player.hand.append(self.stock_pile.pop())
