@@ -4,6 +4,22 @@
     Date created: 11/28/2021
 '''
 
+'''
+Identify a particular game board
+
+e.g. board_id = 3
+     then dealer_id = 2
+     
+e.g. board_id = 5
+     then dealer_id = 0
+ 
+ 
+    2  
+1       3
+    0
+    4
+'''
+
 
 class Tray(object):
 
@@ -16,15 +32,5 @@ class Tray(object):
     def dealer_id(self):
         return (self.board_id - 1) % 4
 
-    @property
-    def vul(self):
-        vul_none = [0, 0, 0, 0]
-        vul_n_s = [1, 0, 1, 0]
-        vul_e_w = [0, 1, 0, 1]
-        vul_all = [1, 1, 1, 1]
-        basic_vuls = [vul_none, vul_n_s, vul_e_w, vul_all]
-        offset = (self.board_id - 1) // 4
-        return basic_vuls[(self.board_id - 1 + offset) % 4]
-
     def __str__(self):
-        return f'{self.board_id}: dealer_id={self.dealer_id} vul={self.vul}'
+        return f'{self.board_id}: dealer_id={self.dealer_id}'
