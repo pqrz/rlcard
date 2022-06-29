@@ -41,6 +41,19 @@ from rlcard.games.bridge.utils.move import CallMove, PlayCardMove
 #
 
 
+
+########################### Env #################################
+
+'''
+Player's
+   1. Extract state
+   2. Action
+   2. Player's payoff
+   
+State  ->  Action  ->  Reward
+'''
+
+
 class BridgeEnv(Env):
     ''' Bridge Environment
     '''
@@ -55,15 +68,21 @@ class BridgeEnv(Env):
         self.action_shape = [None for _ in range(self.num_players)]
 
     def get_payoffs(self):
-        ''' Get the payoffs of players.
+        ''' 
+        #2
+        Get the payoffs of players.
 
         Returns:
             (list): A list of payoffs for each player.
+            
+        e.g. [1, 9, 2, 9]
         '''
         return self.bridgePayoffDelegate.get_payoffs(game=self.game)
 
     def get_perfect_information(self):
-        ''' Get the perfect information of the current state
+        ''' 
+        #2
+        [Get] Get the perfect information of the current state
 
         Returns:
             (dict): A dictionary of all the perfect information of the current state
@@ -71,7 +90,9 @@ class BridgeEnv(Env):
         return self.game.round.get_perfect_information()
 
     def _extract_state(self, state):  # wch: don't use state 211126
-        ''' Extract useful information from state for RL.
+        ''' 
+        #2
+        Extract useful information from state for RL.
 
         Args:
             state (dict): The raw state
@@ -82,7 +103,9 @@ class BridgeEnv(Env):
         return self.bridgeStateExtractor.extract_state(game=self.game)
 
     def _decode_action(self, action_id):
-        ''' Decode Action id to the action in the game.
+        ''' 
+        
+        Decode Action id to the action in the game.
 
         Args:
             action_id (int): The id of the action
@@ -101,6 +124,10 @@ class BridgeEnv(Env):
         raise NotImplementedError  # wch: not needed
 
 
+       
+    
+########################### Helper Functions / 1. Extract Payoff #################################
+
 class BridgePayoffDelegate(object):
 
     def get_payoffs(self, game: BridgeGame):
@@ -113,6 +140,8 @@ class BridgePayoffDelegate(object):
         '''
         raise NotImplementedError
 
+        
+ 
 
 class DefaultBridgePayoffDelegate(BridgePayoffDelegate):
 
@@ -120,7 +149,8 @@ class DefaultBridgePayoffDelegate(BridgePayoffDelegate):
         self.make_bid_bonus = 2
 
     def get_payoffs(self, game: BridgeGame):
-        ''' Get the payoffs of players.
+        ''' 
+        Get the payoffs of each players.
 
         Returns:
             (list): A list of payoffs for each player.
@@ -142,6 +172,10 @@ class DefaultBridgePayoffDelegate(BridgePayoffDelegate):
             payoffs = [0, 0, 0, 0]
         return np.array(payoffs)
 
+
+
+
+########################### Helper Functions / 2. Extract State #################################    
 
 class BridgeStateExtractor(object):  # interface
 
