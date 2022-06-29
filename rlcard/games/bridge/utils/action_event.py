@@ -16,7 +16,13 @@ from .bridge_card import BridgeCard
 #       39 to 90 -> play_card_action_id
 # ====================================
 
+'''
+Action_ID (as number) to Action_identifier (as object)
+e.g.  3     ->    <object> PlayCardAction(card=card)
+'''
 
+
+# Interface: for all actions
 class ActionEvent(object):  # Interface
 
     no_bid_action_id = 0
@@ -30,6 +36,7 @@ class ActionEvent(object):  # Interface
         self.action_id = action_id
 
     def __eq__(self, other):
+        # Comp
         result = False
         if isinstance(other, ActionEvent):
             result = self.action_id == other.action_id
@@ -37,6 +44,9 @@ class ActionEvent(object):  # Interface
 
     @staticmethod
     def from_action_id(action_id: int):
+        # Action_id -> Action_object
+        # e.g. Input = 3
+        #      Output = <object> PlayCardAction(card=card)
         if action_id == ActionEvent.pass_action_id:
             return PassAction()
         elif ActionEvent.first_bid_action_id <= action_id <= 35:
@@ -44,10 +54,6 @@ class ActionEvent(object):  # Interface
             bid_suit_id = (action_id - ActionEvent.first_bid_action_id) % 5
             bid_suit = BridgeCard.suits[bid_suit_id] if bid_suit_id < 4 else None
             return BidAction(bid_amount, bid_suit)
-        elif action_id == ActionEvent.dbl_action_id:
-            return DblAction()
-        elif action_id == ActionEvent.rdbl_action_id:
-            return RdblAction()
         elif ActionEvent.first_play_card_action_id <= action_id < ActionEvent.first_play_card_action_id + 52:
             card_id = action_id - ActionEvent.first_play_card_action_id
             card = BridgeCard.card(card_id=card_id)
@@ -57,15 +63,12 @@ class ActionEvent(object):  # Interface
 
     @staticmethod
     def get_num_actions():
-        ''' Return the number of possible actions in the game
+        ''' Return the total number of possible actions in the game
         '''
         return 1 + 35 + 3 + 52  # no_bid, 35 bids, pass, dbl, rdl, 52 play_card
 
 
-class CallActionEvent(ActionEvent):  # Interface
-    pass
-
-
+# Action_identifier: 1.1 Bid phase / Pass
 class PassAction(CallActionEvent):
 
     def __init__(self):
@@ -78,6 +81,7 @@ class PassAction(CallActionEvent):
         return "pass"
 
 
+# Action_identifier: 1.2 Bid phase / Place bid
 class BidAction(CallActionEvent):
 
     def __init__(self, bid_amount: int, bid_suit: str or None):
@@ -103,30 +107,7 @@ class BidAction(CallActionEvent):
         return self.__str__()
 
 
-class DblAction(CallActionEvent):
-
-    def __init__(self):
-        super().__init__(action_id=ActionEvent.dbl_action_id)
-
-    def __str__(self):
-        return "dbl"
-
-    def __repr__(self):
-        return "dbl"
-
-
-class RdblAction(CallActionEvent):
-
-    def __init__(self):
-        super().__init__(action_id=ActionEvent.rdbl_action_id)
-
-    def __str__(self):
-        return "rdbl"
-
-    def __repr__(self):
-        return "rdbl"
-
-
+# Action_identifier: 2. Play Card Phase
 class PlayCardAction(ActionEvent):
 
     def __init__(self, card: BridgeCard):
