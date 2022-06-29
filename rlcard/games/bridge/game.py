@@ -13,6 +13,12 @@ from .round import BridgeRound
 from .utils.action_event import ActionEvent, CallActionEvent, PlayCardAction
 
 
+'''
+Entry point: 
+    *Game 
+    (main calls round.py and maintains state)
+'''
+
 class BridgeGame:
     ''' Game class. This class will interact with outer environment.
     '''
@@ -28,7 +34,8 @@ class BridgeGame:
         self.num_players: int = 4
 
     def init_game(self):
-        ''' Initialize all characters in the game and start round 1
+        '''
+        Initialize all characters in the game and start round 1
         '''
         board_id = self.np_random.choice([1, 2, 3, 4])
         self.actions: List[ActionEvent] = []
@@ -41,42 +48,57 @@ class BridgeGame:
         return state, current_player_id
 
     def step(self, action: ActionEvent):
-        ''' Perform game action and return next player number, and the state for next player
         '''
+        #1 
+        [Put] Perform game action and return next player number, and the state for next player
+        '''
+        # Phase: Bidding phase
         if isinstance(action, CallActionEvent):
             self.round.make_call(action=action)
+        # Phase: PlayCard phase
         elif isinstance(action, PlayCardAction):
             self.round.play_card(action=action)
         else:
             raise Exception(f'Unknown step action={action}')
         self.actions.append(action)
+        
         next_player_id = self.round.current_player_id
         next_state = self.get_state(player_id=next_player_id)
         return next_state, next_player_id
 
     def get_num_players(self) -> int:
-        ''' Return the number of players in the game
+        ''' 
+        #2
+        [Get] Return the total number of players in the game
         '''
         return self.num_players
 
     @staticmethod
     def get_num_actions() -> int:
-        ''' Return the number of possible actions in the game
+        ''' 
+        #2
+        [Get] Return the total number of possible actions in the game
         '''
         return ActionEvent.get_num_actions()
 
     def get_player_id(self):
-        ''' Return the current player that will take actions soon
+        ''' 
+        #2
+        [Get] Return the current player
         '''
         return self.round.current_player_id
 
     def is_over(self) -> bool:
-        ''' Return whether the current game is over
+        ''' 
+        #2
+        [Get] Return whether the current game is over
         '''
         return self.round.is_over()
 
     def get_state(self, player_id: int):  # wch: not really used
-        ''' Get player's state
+        ''' 
+        #2
+        [Get] Given a player, return its state
 
         Return:
             state (dict): The information of the state
