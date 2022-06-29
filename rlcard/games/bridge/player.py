@@ -9,6 +9,12 @@ from typing import List
 from .utils.bridge_card import BridgeCard
 
 
+'''
+1. Define player
+   (basically define player_id and his hand)
+
+'''
+
 class BridgePlayer:
 
     def __init__(self, player_id: int, np_random):
