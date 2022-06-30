@@ -19,8 +19,7 @@ Handle a round
 1. __init__() = Init player for round
 2. playCard() = current player plays a card   ->   if he's the last, then compute the winner too
 3. get_current_player(), get_trick_moves() = Info functions for round
-
-
+4. round.move_sheet: History of move of each player
 '''
 
 
