@@ -296,7 +296,7 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
         state_shape_size = 0
         
         # 1) Cards representation
-        # 1.1 Cards / In hand
+        # 1.1 Cards / In hand / Current player
         state_shape_size += 4 * 52                         # 1.  hands_rep_size         : Rep of hand of  each player = [ [1, 0, 1,  ...... 0],
                                                            #                                                              [0, 1, 0,  ...... 0]
                                                            #                                                              [0, 0, 1,  ...... 0]
@@ -309,7 +309,7 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
                                                            #                                                              [0, 0, 1,  ...... 0]
                                                            #                                                              [0, 0, 0,  ...... 1] ]
         
-        # 1.3 Cards / Not known to current player
+        # 1.3 Cards / In hand / Other players
         state_shape_size += 52                             # 3.  hidden_cards_rep_size   : Rep of cards played of other players (other then current player)
                                                            #                                                        e.g. [1, 0, 0,  .... 0]     (52 items)
         
@@ -369,9 +369,9 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
         current_player_id = current_player.player_id
 
         # 1) Cards representation
-        # 1.1 Cards / In hand
-        
-        # construct hands_rep of hands of players
+        # 1.1 Cards / In hand / Current player
+        '''
+        # If Bridge
         hands_rep = [np.zeros(52, dtype=int) for _ in range(4)]
         if not game.is_over():
             # A. For current player: 
@@ -386,13 +386,22 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
                 other_known_player = dummy if dummy.player_id != current_player_id else game.round.get_declarer()
                 for card in other_known_player.hand:
                     hands_rep[other_known_player.player_id][card.card_id] = 1
-
-
-        # 1.2 Cards / In pile
+        '''
         
-        # construct trick_pile_rep
+        # If Tarneeb
+        hands_rep = [np.zeros(52, dtype=int) for _ in range(4)]
+        if not game.is_over():
+            # A. For current player: 
+            #                        Extract from "game.round.players"  ->   hands_rep
+            for card in game.round.players[current_player_id].hand:
+                hands_rep[current_player_id][card.card_id] = 1
+
+
+        # 1.2 Cards / In pile                                        
+        #                      Core:         
+        #                           Reformat: "game.round.get_trick_moves()"   ->   State representation
         trick_pile_rep = [np.zeros(52, dtype=int) for _ in range(4)]
-        # If: Phase: PlayCard 
+        # If: Phase = PlayCard 
         if game.round.is_bidding_over() and not game.is_over():
             
             # Get past moves / card played  (in ongoing round)
@@ -405,7 +414,7 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
                 trick_pile_rep[player.player_id][card.card_id] = 1
 
 
-        # 1.3 Cards / other player's card
+        # 1.3 Cards / In hand / Other player
         # construct hidden_card_rep (during trick taking phase)
         hidden_cards_rep = np.zeros(52, dtype=int)
         if not game.is_over():
@@ -447,7 +456,12 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
         # 2) Player representation
         # 2.1 Player / Highest bidder
         dealer_rep = np.zeros(4, dtype=int)
+        # If Bridge:
+        '''
         dealer_rep[game.round.tray.dealer_id] = 1                                        # Reformat:  "game.round.tray.dealer_id"   ->   State representation
+        '''
+        # If Tarneeb:
+        dealer_rep[game.round.get_declarer()] = 1
 
         
         # 2.2 Player / Current player
@@ -459,10 +473,13 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
         # 3.1 Bidding phase
         is_bidding_rep = np.array([1] if game.round.is_bidding_over() else [0])           # Reformat:  "game.round.is_bidding_over()"   ->   State representation
 
+        
         # 3.2 Bid amount representation
         #bidding_rep = np.zeros(self.max_bidding_rep_index, dtype=int)
         bidding_rep = np.zeros(4*8, dtype=int)
         #bidding_rep_index = game.round.dealer_id  # no_bid_action_ids allocated at start so that north always 'starts' the bidding
+        # If bridge:
+        '''
         for move in game.round.move_sheet:
             #if bidding_rep_index >= self.max_bidding_rep_index:
             #    break
@@ -471,13 +488,24 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
             elif isinstance(move, CallMove):
                 bidding_rep[bidding_rep_index] = move.action.action_id          # check: move.action.action_id ?
                 # bidding_rep_index += 1
-
-
+        '''
+        
+        # If Tarneeb:
+        # Highest bid till now
+        if len(game.round.move_sheet):
+            this_round_moves = len(game.round.move_sheet) % 4
+            for move in game.round.move_sheet[::-1]:
+                if isinstance(move, MakeBidMove):
+                    bidding_rep[move.player.player_id][last_move.action.action_id - ActionEvent.no_bid_action_id] = 1
+                    #bidding_rep[current_player_id] = move.action.action_id          # check: move.action.action_id ?
+                    # bidding_rep_index += 1
+                    break
+        
         # 3.3 Last bid_amount representation
         last_bid_rep = np.zeros(self.last_bid_rep_size, dtype=int)
         last_move = game.round.move_sheet[-1]
         if isinstance(last_move, CallMove):
-            last_bid_rep[last_move.action.action_id - ActionEvent.no_bid_action_id] = 1
+            last_bid_rep[last_move.action.action_id - ActionEvent.no_bid_action_id] = 1            # check: ActionEvent.no_bid_action_id ?
 
         
         # 3.4 Final contract / bid_amount representation          : Reformat "contract_bid_move.action.bid_amount"   ->   State representation
