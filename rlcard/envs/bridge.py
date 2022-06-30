@@ -163,12 +163,22 @@ class DefaultBridgePayoffDelegate(BridgePayoffDelegate):
             # Dummy    - Teammate of the declarer ............................ e.g. p2
             # Defender - players of the other team of declarer ............... e.g. p1, p3
 
-            # i.e. all players = Declarer + Dummy + Defender
+            # i.e. all players = Bidding team (=Declarer + Dummy) + Defender team
             
             # Contract - the highest / final bid ........ i.e. contract of the PlayCard phase
             declarer = contract_bid_move.player
             
             # Bid amount    ->     No. of games to be won in contract
+            
+            '''
+            # for Bridge
+            bid_trick_count = contract_bid_move.action.bid_amount + 6
+            '''
+            
+            # for Tarneeb
+            '''
+            Bid amount ∈ [7, 13]
+            '''
             bid_trick_count = contract_bid_move.action.bid_amount + 6
             
             # 1. Compute Total_wins of declarer and defender
@@ -176,14 +186,60 @@ class DefaultBridgePayoffDelegate(BridgePayoffDelegate):
             
             declarer_won_trick_count = won_trick_counts[declarer.player_id % 2]
             defender_won_trick_count = won_trick_counts[(declarer.player_id + 1) % 2]
+
             
             # 2. Total_wins   ->  Payoff 
+            '''
+            # for bridge
             if bid_trick_count <= declarer_won_trick_count:
                 declarer_payoff = bid_trick_count + self.make_bid_bonus  
             else:
                 declarer_payoff = declarer_won_trick_count - bid_trick_count
             
             defender_payoff = defender_won_trick_count
+            '''
+            
+            # for Tarneeb
+            '''
+            Payoff Rules:
+                1. The bidder's team tries to take at least as many tricks as they bid. 
+                   If their bid is less than 13 and succeed, they score the number of tricks they won, and the other team scores nothing. 
+            
+                2. If the bidding team takes fewer tricks than they bid, they lose the amount of their bid, and the other team scores the number of tricks they won.
+
+                3. Winning all 13 tricks is called kaboot. If the bid was less than 13, kaboot brings a bonus of 3 points, so 16 points in total instead of 13.
+
+                4. If a team bids 13 tricks and wins them all, they score 26 points. 
+                   If they lose any tricks, they score minus 16 and the other team scores double the number the tricks that they win.
+
+                5. Further hands are played until one team achieves a cumulative score of 41 points or more, and wins the game.
+                
+                Ref: https://www.pagat.com/auctionwhist/tarneeb.html
+            '''
+            if bid_trick_count < 13:
+                # 1.
+                if declarer_won_trick_count >= bid_trick_count:
+                    declarer_payoff = declarer_won_trick_count
+                    defender_payoff = 0
+                # 2. 
+                else:
+                    declarer_payoff = declarer_won_trick_count - bid_trick_count
+                    defender_payoff = defender_won_trick_count
+                # 3.
+                if declarer_won_trick_count == 13:
+                    declarer_payoff = 16   
+            elif bid_trick_count == 13:
+                # 4. 
+                if declarer_won_trick_count == 13:
+                    declarer_payoff = 26
+                    defender_payoff = 0
+                # 5.
+                else:
+                    declarer_payoff = -16
+                    defender_payoff = 2*defender_won_trick_count
+             else:
+                raise Exception("Unexpected case")
+                  
             
             # 3. Team_payoff ->  Individual payoff
             payoffs = []
