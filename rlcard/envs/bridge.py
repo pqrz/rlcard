@@ -343,11 +343,11 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
         #state_shape_size += self.last_bid_rep_size         # 9.  last_bid_rep_size         : Rep of last bid amount
         state_shape_size += 8                               #                                                              e.g. [px_pass, px_7, px_8, px_9, px_10, px_11, px_12, px_13]
 
-        # 3.4 Current bid_amount representation
+        # 3.4 Final contract / bid_amount representation
         state_shape_size += 8                              # 10. bid_amount_rep_size       : Rep of current bid amount
                                                            #                                                              e.g. [py_pass, py_7, py_8, py_9, py_10, py_11, py_12, py_13]
         
-        # 3.5 Trump suite representation
+        # 3.5 Final contract / Trump suite representation
         state_shape_size += 5                              # 11. trump_suit_rep_size       : Rep of trump suite
                                                            #                                                                    Spade, Diamond, Club, Hearts, No-Trump
                                                            #                                                               e.g. [0    , 1      , 0   , 0     , 0]
@@ -411,15 +411,24 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
         if not game.is_over():
             # Case #1: Phase = PlayCard phase
             if game.round.is_bidding_over():
+                
+                # if Bridge:
+                '''
                 declarer = game.round.get_declarer()
                 if current_player_id % 2 == declarer.player_id % 2:
                     hidden_player_ids = [(current_player_id + 1) % 2, (current_player_id + 3) % 2]
                 else:
                     hidden_player_ids = [declarer.player_id, (current_player_id + 2) % 2]
-
                 for hidden_player_id in hidden_player_ids:
                     for card in game.round.players[hidden_player_id].hand:
                         hidden_cards_rep[card.card_id] = 1
+                '''
+                
+                # if Tarneeb:
+                for player in game.round.players:
+                    if player.player_id != current_player_id:
+                        for card in player.hand:
+                            hidden_cards_rep[card.card_id] = 1
             # Case #2: Phase = Bidding phase
             else:
                 # hidden cards = card of all other players
@@ -431,48 +440,61 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
                             hidden_cards_rep[card.card_id] = 1
 
         # construct vul_rep
-        vul_rep = np.array(game.round.tray.vul, dtype=int)
+        # for bridge:
+        # vul_rep = np.array(game.round.tray.vul, dtype=int)
 
-        # construct dealer_rep
+        
+        # 2) Player representation
+        # 2.1 Player / Highest bidder
         dealer_rep = np.zeros(4, dtype=int)
-        dealer_rep[game.round.tray.dealer_id] = 1
+        dealer_rep[game.round.tray.dealer_id] = 1                                        # Reformat:  "game.round.tray.dealer_id"   ->   State representation
 
-        # construct current_player_rep
+        
+        # 2.2 Player / Current player
         current_player_rep = np.zeros(4, dtype=int)
-        current_player_rep[current_player_id] = 1
+        current_player_rep[current_player_id] = 1                                        # Reformat:  "current_player_id"   ->   State representation
 
-        # construct is_bidding_rep
-        is_bidding_rep = np.array([1] if game.round.is_bidding_over() else [0])
 
-        # construct bidding_rep
-        bidding_rep = np.zeros(self.max_bidding_rep_index, dtype=int)
-        bidding_rep_index = game.round.dealer_id  # no_bid_action_ids allocated at start so that north always 'starts' the bidding
+        # 3) Bidding Phase representation
+        # 3.1 Bidding phase
+        is_bidding_rep = np.array([1] if game.round.is_bidding_over() else [0])           # Reformat:  "game.round.is_bidding_over()"   ->   State representation
+
+        # 3.2 Bid amount representation
+        #bidding_rep = np.zeros(self.max_bidding_rep_index, dtype=int)
+        bidding_rep = np.zeros(4*8, dtype=int)
+        #bidding_rep_index = game.round.dealer_id  # no_bid_action_ids allocated at start so that north always 'starts' the bidding
         for move in game.round.move_sheet:
-            if bidding_rep_index >= self.max_bidding_rep_index:
+            #if bidding_rep_index >= self.max_bidding_rep_index:
+            #    break
+            if isinstance(move, PlayCardMove):
                 break
-            elif isinstance(move, PlayCardMove):
-                break
-            elif isinstance(move, CallMove):
-                bidding_rep[bidding_rep_index] = move.action.action_id
-                bidding_rep_index += 1
+            elif isinstance(move, [MakePassMove, MakeBidMove]):
+                bidding_rep[bidding_rep_index] = move.action.action_id          # check: move.action.action_id ?
+                # bidding_rep_index += 1
 
-        # last_bid_rep
+
+        # 3.3 Last bid_amount representation
         last_bid_rep = np.zeros(self.last_bid_rep_size, dtype=int)
         last_move = game.round.move_sheet[-1]
-        if isinstance(last_move, CallMove):
+        if isinstance(last_move, [MakePassMove, MakeBidMove]):
             last_bid_rep[last_move.action.action_id - ActionEvent.no_bid_action_id] = 1
 
-        # bid_amount_rep and trump_suit_rep
+        
+        # 3.4 Final contract / bid_amount representation          : Reformat "contract_bid_move.action.bid_amount"   ->   State representation
+        # & 
+        # 3.5 Final contract / Trump suite representation         : Reformat "contract_bid_move.action.bid_suit"     ->   State representation
         bid_amount_rep = np.zeros(8, dtype=int)
         trump_suit_rep = np.zeros(5, dtype=int)
-        if game.round.is_bidding_over() and not game.is_over() and game.round.play_card_count == 0:
+        if game.round.is_bidding_over() and (not game.is_over()) and (game.round.play_card_count == 0):
             contract_bid_move = game.round.contract_bid_move
             if contract_bid_move:
                 bid_amount_rep[contract_bid_move.action.bid_amount] = 1
+                
                 bid_suit = contract_bid_move.action.bid_suit
                 bid_suit_index = 4 if not bid_suit else BridgeCard.suits.index(bid_suit)
                 trump_suit_rep[bid_suit_index] = 1
 
+        # Concatenate individual state list  ->  one master list 
         rep = []
         rep += hands_rep
         rep += trick_pile_rep
@@ -487,8 +509,12 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
         rep.append(trump_suit_rep)
 
         obs = np.concatenate(rep)
+        
+        
         extracted_state['obs'] = obs
         extracted_state['legal_actions'] = legal_actions
         extracted_state['raw_legal_actions'] = raw_legal_actions
         extracted_state['raw_obs'] = obs
+        
+        
         return extracted_state
