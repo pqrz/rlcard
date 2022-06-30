@@ -81,10 +81,12 @@ class BridgeRound:
         tray = Tray(board_id=board_id)
         
         # 2. Dealer init
-        dealer_id = tray.dealer_id
+        # If Bridge:
+        #dealer_id = tray.dealer_id
         self.tray = tray
         self.np_random = np_random
-        self.dealer: BridgeDealer = BridgeDealer(self.np_random)
+        # If Bridge:
+        #self.dealer: BridgeDealer = BridgeDealer(self.np_random)
         
         # 3. Player init
         self.players: List[BridgePlayer] = []
@@ -92,7 +94,8 @@ class BridgeRound:
             self.players.append(BridgePlayer(player_id=player_id, np_random=self.np_random))
         self.current_player_id: int = dealer_id
 
-        self.doubling_cube: int = 1
+        # If Bridge:
+        #self.doubling_cube: int = 1
         self.play_card_count: int = 0
 
         self.contract_bid_move: MakeBidMove or None = None
@@ -254,6 +257,8 @@ class BridgeRound:
                     break
         return declarer
 
+    # If Bridge
+    '''
     def get_dummy(self) -> BridgePlayer or None:
         """
         # 2
@@ -266,6 +271,7 @@ class BridgeRound:
         if declarer:
             dummy = self.players[(declarer.player_id + 2) % 4]
         return dummy
+    '''
 
     def get_left_defender(self) -> BridgePlayer or None:
         """
