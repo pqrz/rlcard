@@ -15,8 +15,9 @@ from .utils.action_event import ActionEvent, CallActionEvent, PlayCardAction
 
 '''
 # Tarneeb Strucute
-                        round_1    
-                     /  
+                                
+                        round_1   
+                     /           
           Fatiyeh_1  -  round_2
         /            \
        /                round_3               
@@ -26,7 +27,7 @@ Game  -   Fatiyeh_2
        \ 
           Fatiyeh_3
           
-                         (there are 13 rounds / Fatiyeh)
+                         (there are 13 rounds (a.k.a tricks) / per Fatiyeh)
                          
           (there are those no.
            of Fatiyah untill one of the team
