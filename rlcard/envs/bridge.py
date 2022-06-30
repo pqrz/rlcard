@@ -290,8 +290,8 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
 
     def __init__(self):
         super().__init__()
-        self.max_bidding_rep_index = 40  # Note: max of 40 calls
-        self.last_bid_rep_size = 1 + 35 + 3  # no_bid, bid, pass, dbl, rdbl
+        #self.max_bidding_rep_index = 40  # Note: max of 40 calls
+        #self.last_bid_rep_size = 1 + 35 + 3  # no_bid, bid, pass, dbl, rdbl
 
     def get_state_shape_size(self) -> int:
         state_shape_size = 0
@@ -310,8 +310,8 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
                                                            #                                                              [0, 0, 1,  ...... 0]
                                                            #                                                              [0, 0, 0,  ...... 1] ]
         
-        # 1.3 Cards / In history
-        state_shape_size += 52                             # 3.  hidden_cards_rep_size   : Rep of cards played in old rounds 
+        # 1.3 Cards / Not known to current player
+        state_shape_size += 52                             # 3.  hidden_cards_rep_size   : Rep of cards played of other players (other then current player)
                                                            #                                                        e.g. [1, 0, 0,  .... 0]     (52 items)
         
         
@@ -327,26 +327,26 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
         state_shape_size += 4                              # 6.  current_player_rep_size : Rep of current player (who will play now)
                                                            #                                                          e.g. [0, 1, 0, 0]     (i.e. p2)
 
-        # 3) Phase representation
+        # 3) Bidding Phase representation
         # 3.1 Bidding phase
         state_shape_size += 1                              # 7.  is_bidding_rep_size     : Rep of bidding phase ongoing
                                                            #                                                            e.g. 1                 (i.e. yes bidding phase)
                                                            #                                                            e.g. 0                 (i.e. no bidding phase / yes playcard phase)
 
         # 3.2 Bid amount representation
-        state_shape_size += self.max_bidding_rep_index     # 8.  bidding_rep_size         : Rep of bidding amount of one round for each player
-                                                           #                                                             e.g. [p1_7, p1_8, p1_9, p1_10, p1_11, p1_12, p1_13,
-                                                           #                                                                   p2_7, p2_8, p2_9, p2_10, p2_11, p2_12, p2_13,
-                                                           #                                                                   p3_7, p3_8, p3_9, p3_10, p3_11, p3_12, p3_13,
-                                                           #                                                                   p4_7, p4_8, p4_9, p4_10, p4_11, p4_12, p4_13]
+        #state_shape_size += self.max_bidding_rep_index     # 8.  bidding_rep_size         : Rep of bidding amount of one round for each player
+        state_shape_size += 4*8                             #                                                             e.g. [p1_pass, p1_7, p1_8, p1_9, p1_10, p1_11, p1_12, p1_13,
+                                                            #                                                                   p2_pass, p2_7, p2_8, p2_9, p2_10, p2_11, p2_12, p2_13,
+                                                            #                                                                   p3_pass, p3_7, p3_8, p3_9, p3_10, p3_11, p3_12, p3_13,
+                                                            #                                                                   p4_pass, p4_7, p4_8, p4_9, p4_10, p4_11, p4_12, p4_13]
         
-        # 3.3 Last amount representation
-        state_shape_size += self.last_bid_rep_size         # 9.  last_bid_rep_size         : Rep of last bid amount
-                                                           #                                                              e.g. [px_7, px_8, px_9, px_10, px_11, px_12, px_13]
+        # 3.3 Last bid_amount representation
+        #state_shape_size += self.last_bid_rep_size         # 9.  last_bid_rep_size         : Rep of last bid amount
+        state_shape_size += 8                               #                                                              e.g. [px_pass, px_7, px_8, px_9, px_10, px_11, px_12, px_13]
 
-        # 3.4 Current amount representation
+        # 3.4 Current bid_amount representation
         state_shape_size += 8                              # 10. bid_amount_rep_size       : Rep of current bid amount
-                                                           #                                                              e.g. [py_7, py_8, py_9, py_10, py_11, py_12, py_13]
+                                                           #                                                              e.g. [py_pass, py_7, py_8, py_9, py_10, py_11, py_12, py_13]
         
         # 3.5 Trump suite representation
         state_shape_size += 5                              # 11. trump_suit_rep_size       : Rep of trump suite
@@ -369,38 +369,59 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
         current_player = game.round.get_current_player()
         current_player_id = current_player.player_id
 
+        # 1) Cards representation
+        # 1.1 Cards / In hand
+        
         # construct hands_rep of hands of players
         hands_rep = [np.zeros(52, dtype=int) for _ in range(4)]
         if not game.is_over():
+            # A. For current player: 
+            #                        Extract from "game.round.players"  ->   hands_rep
             for card in game.round.players[current_player_id].hand:
                 hands_rep[current_player_id][card.card_id] = 1
+            
+            # B. For dummy player: 
+            #                        Extract from "game.round.get_dummy()"  ->   State representation
             if game.round.is_bidding_over():
                 dummy = game.round.get_dummy()
                 other_known_player = dummy if dummy.player_id != current_player_id else game.round.get_declarer()
                 for card in other_known_player.hand:
                     hands_rep[other_known_player.player_id][card.card_id] = 1
 
+
+        # 1.2 Cards / In pile
+        
         # construct trick_pile_rep
         trick_pile_rep = [np.zeros(52, dtype=int) for _ in range(4)]
+        # If: Phase: PlayCard 
         if game.round.is_bidding_over() and not game.is_over():
+            
+            # Get past moves / card played  (in ongoing round)
             trick_moves = game.round.get_trick_moves()
+            
+            # Reformat: "game.round.get_trick_moves()"   ->   State representation
             for move in trick_moves:
                 player = move.player
                 card = move.card
                 trick_pile_rep[player.player_id][card.card_id] = 1
 
+
+        # 1.3 Cards / In history
         # construct hidden_card_rep (during trick taking phase)
         hidden_cards_rep = np.zeros(52, dtype=int)
         if not game.is_over():
+            # Case: Phase = PlayCard phase
             if game.round.is_bidding_over():
                 declarer = game.round.get_declarer()
                 if current_player_id % 2 == declarer.player_id % 2:
                     hidden_player_ids = [(current_player_id + 1) % 2, (current_player_id + 3) % 2]
                 else:
                     hidden_player_ids = [declarer.player_id, (current_player_id + 2) % 2]
+
                 for hidden_player_id in hidden_player_ids:
                     for card in game.round.players[hidden_player_id].hand:
                         hidden_cards_rep[card.card_id] = 1
+            # Case: Phase = Bidding phase
             else:
                 for player in game.round.players:
                     if player.player_id != current_player_id:
