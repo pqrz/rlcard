@@ -41,7 +41,6 @@ from rlcard.games.bridge.utils.move import CallMove, PlayCardMove
 #
 
 
-
 ########################### Env #################################
 
 '''
@@ -212,7 +211,7 @@ class DefaultBridgePayoffDelegate(BridgePayoffDelegate):
                 4. If a team bids 13 tricks and wins them all, they score 26 points. 
                    If they lose any tricks, they score minus 16 and the other team scores double the number the tricks that they win.
 
-                5. Further hands are played until one team achieves a cumulative score of 41 points or more, and wins the game.
+                5. Further hands are played until one team achieves a cumulative score of 41 points (=terminal score) or more, and wins the game.
                 
                 Ref: https://www.pagat.com/auctionwhist/tarneeb.html
             '''
@@ -406,11 +405,11 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
                 trick_pile_rep[player.player_id][card.card_id] = 1
 
 
-        # 1.3 Cards / In history
+        # 1.3 Cards / other player's card
         # construct hidden_card_rep (during trick taking phase)
         hidden_cards_rep = np.zeros(52, dtype=int)
         if not game.is_over():
-            # Case: Phase = PlayCard phase
+            # Case #1: Phase = PlayCard phase
             if game.round.is_bidding_over():
                 declarer = game.round.get_declarer()
                 if current_player_id % 2 == declarer.player_id % 2:
@@ -421,8 +420,11 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
                 for hidden_player_id in hidden_player_ids:
                     for card in game.round.players[hidden_player_id].hand:
                         hidden_cards_rep[card.card_id] = 1
-            # Case: Phase = Bidding phase
+            # Case #2: Phase = Bidding phase
             else:
+                # hidden cards = card of all other players
+                # e.g. Current plaayers = p2
+                #      Other players    = [p1, p3, p4]
                 for player in game.round.players:
                     if player.player_id != current_player_id:
                         for card in player.hand:
