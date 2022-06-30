@@ -33,4 +33,4 @@ class BridgePlayer:
         self.hand.remove(card)
 
     def __str__(self):
-        return ['N', 'E', 'S', 'W'][self.player_id]
+        return ['p0', 'p1', 'p2', 'p3'][self.player_id]

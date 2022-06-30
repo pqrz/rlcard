@@ -8,7 +8,7 @@
 # These classes are used to keep a move_sheet history of the moves in a round.
 #
 
-from .action_event import ActionEvent, BidAction, PassAction, DblAction, RdblAction, PlayCardAction
+from .action_event import ActionEvent, BidAction, PassAction, PlayCardAction
 from .bridge_card import BridgeCard
 
 from ..player import BridgePlayer
