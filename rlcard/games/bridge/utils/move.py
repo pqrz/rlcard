@@ -15,19 +15,28 @@ from ..player import BridgePlayer
 
 
 
-# 1. Interface:
-class BridgeMove(object):  # Interface
+################### 1. Interface #############################################
+
+class BridgeMove(object):         # Interface 1: Generic
     pass
 
-class PlayerMove(BridgeMove):  # Interface
+
+class PlayerMove(BridgeMove):     # Interface 2.1: Phase: PlayCard phase
 
     def __init__(self, player: BridgePlayer, action: ActionEvent):
         super().__init__()
         self.player = player
         self.action = action
 
+        
+class CallMove(PlayerMove):        # Interface 2.2: Phase: Bidding phase
 
-# 2. Moves:
+    def __init__(self, player: BridgePlayer, action: ActionEvent):
+        super().__init__(player=player, action=action)
+
+
+
+################# 2. Moves ####################################################
 ## 2.1 Move = ?
 class DealHandMove(BridgeMove):
 
