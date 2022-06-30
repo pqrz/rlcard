@@ -295,17 +295,63 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
 
     def get_state_shape_size(self) -> int:
         state_shape_size = 0
-        state_shape_size += 4 * 52  # hands_rep_size
-        state_shape_size += 4 * 52  # trick_rep_size
-        state_shape_size += 52  # hidden_cards_rep_size
-        state_shape_size += 4  # vul_rep_size
-        state_shape_size += 4  # dealer_rep_size
-        state_shape_size += 4  # current_player_rep_size
-        state_shape_size += 1  # is_bidding_rep_size
-        state_shape_size += self.max_bidding_rep_index  # bidding_rep_size
-        state_shape_size += self.last_bid_rep_size  # last_bid_rep_size
-        state_shape_size += 8  # bid_amount_rep_size
-        state_shape_size += 5  # trump_suit_rep_size
+        
+        # 1) Cards representation
+        # 1.1 Cards / In hand
+        state_shape_size += 4 * 52                         # 1.  hands_rep_size         : Rep of hand of  each player = [ [1, 0, 1,  ...... 0],
+                                                           #                                                              [0, 1, 0,  ...... 0]
+                                                           #                                                              [0, 0, 1,  ...... 0]
+                                                           #                                                              [0, 0, 0,  ...... 1] ]
+
+        # 1.2 Cards / In pile
+        state_shape_size += 4 * 52                         # 2.  trick_rep_size         : Rep of trick pile (i.e. the cards being currently played) = 
+                                                           #                                                       e.g. [ [1, 0, 0,  ...... 0],
+                                                           #                                                              [0, 1, 0,  ...... 0]
+                                                           #                                                              [0, 0, 1,  ...... 0]
+                                                           #                                                              [0, 0, 0,  ...... 1] ]
+        
+        # 1.3 Cards / In history
+        state_shape_size += 52                             # 3.  hidden_cards_rep_size   : Rep of cards played in old rounds 
+                                                           #                                                        e.g. [1, 0, 0,  .... 0]     (52 items)
+        
+        
+        # (only for bridge)
+        # state_shape_size += 4                            # 4.  vul_rep_size
+        
+        # 2) Player representation
+        # 2.1 Player / Highest bidder
+        state_shape_size += 4                              # 5.  dealer_rep_size         : Rep of highest bidder finally
+                                                           #                                                          e.g. [0, 0, 1, 0]     (i.e. p3)
+        
+        # 2.2 Player / Current player
+        state_shape_size += 4                              # 6.  current_player_rep_size : Rep of current player (who will play now)
+                                                           #                                                          e.g. [0, 1, 0, 0]     (i.e. p2)
+
+        # 3) Phase representation
+        # 3.1 Bidding phase
+        state_shape_size += 1                              # 7.  is_bidding_rep_size     : Rep of bidding phase ongoing
+                                                           #                                                            e.g. 1                 (i.e. yes bidding phase)
+                                                           #                                                            e.g. 0                 (i.e. no bidding phase / yes playcard phase)
+
+        # 3.2 Bid amount representation
+        state_shape_size += self.max_bidding_rep_index     # 8.  bidding_rep_size         : Rep of bidding amount of one round for each player
+                                                           #                                                             e.g. [p1_7, p1_8, p1_9, p1_10, p1_11, p1_12, p1_13,
+                                                           #                                                                   p2_7, p2_8, p2_9, p2_10, p2_11, p2_12, p2_13,
+                                                           #                                                                   p3_7, p3_8, p3_9, p3_10, p3_11, p3_12, p3_13,
+                                                           #                                                                   p4_7, p4_8, p4_9, p4_10, p4_11, p4_12, p4_13]
+        
+        # 3.3 Last amount representation
+        state_shape_size += self.last_bid_rep_size         # 9.  last_bid_rep_size         : Rep of last bid amount
+                                                           #                                                              e.g. [px_7, px_8, px_9, px_10, px_11, px_12, px_13]
+
+        # 3.4 Current amount representation
+        state_shape_size += 8                              # 10. bid_amount_rep_size       : Rep of current bid amount
+                                                           #                                                              e.g. [py_7, py_8, py_9, py_10, py_11, py_12, py_13]
+        
+        # 3.5 Trump suite representation
+        state_shape_size += 5                              # 11. trump_suit_rep_size       : Rep of trump suite
+                                                           #                                                                    Spade, Diamond, Club, Hearts, No-Trump
+                                                           #                                                               e.g. [0    , 1      , 0   , 0     , 0]
         return state_shape_size
 
     def extract_state(self, game: BridgeGame):
