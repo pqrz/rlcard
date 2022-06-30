@@ -17,8 +17,15 @@ from .utils.tray import Tray
 '''
 Handle a round
 1. __init__() = Init player for round
+
+[Main]
 2. playCard() = current player plays a card   ->   if he's the last, then compute the winner too
+2. make_call() = 
+
+[Info extract]
 3. get_current_player(), get_trick_moves() = Info functions for round
+
+[History]
 4. round.move_sheet: History of all move - in one Fateiyeh
 '''
 
@@ -176,6 +183,26 @@ class BridgeRound:
             trump_suit = self.contract_bid_move.action.bid_suit
         return trump_suit
 
+    def make_call(self, action: CallActionEvent):
+        """
+        # 1
+        [Put] Perform bid card action
+        output = None
+        """
+        # when current_player takes CallActionEvent step, the move is recorded and executed
+        current_player = self.players[self.current_player_id]
+        if isinstance(action, PassAction):
+            self.move_sheet.append(MakePassMove(current_player))
+        elif isinstance(action, BidAction):
+            self.doubling_cube = 1
+            make_bid_move = MakeBidMove(current_player, action)
+            self.contract_bid_move = make_bid_move
+            self.move_sheet.append(make_bid_move)
+
+        if self.is_bidding_over():
+            if not self.is_over():
+                self.current_player_id = self.get_left_defender().player_id
+    
     def play_card(self, action: PlayCardAction):
         """
         # 1
