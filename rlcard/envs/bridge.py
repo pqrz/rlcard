@@ -155,18 +155,43 @@ class DefaultBridgePayoffDelegate(BridgePayoffDelegate):
         Returns:
             (list): A list of payoffs for each player.
         '''
+        # If currently in 1. Bidding phase
+        #                 2. or PlayCard phase
         contract_bid_move = game.round.contract_bid_move
         if contract_bid_move:
+            # Declarer - the player who places the final / highest bid    .... e.g. p0
+            # Dummy    - Teammate of the declarer ............................ e.g. p2
+            # Defender - players of the other team of declarer ............... e.g. p1, p3
+
+            # i.e. all players = Declarer + Dummy + Defender
+            
+            # Contract - the highest / final bid ........ i.e. contract of the PlayCard phase
             declarer = contract_bid_move.player
+            
+            # Bid amount    ->     No. of games to be won in contract
             bid_trick_count = contract_bid_move.action.bid_amount + 6
+            
+            # 1. Compute Total_wins of declarer and defender
             won_trick_counts = game.round.won_trick_counts
+            
             declarer_won_trick_count = won_trick_counts[declarer.player_id % 2]
             defender_won_trick_count = won_trick_counts[(declarer.player_id + 1) % 2]
-            declarer_payoff = bid_trick_count + self.make_bid_bonus if bid_trick_count <= declarer_won_trick_count else declarer_won_trick_count - bid_trick_count
+            
+            # 2. Total_wins   ->  Payoff 
+            if bid_trick_count <= declarer_won_trick_count:
+                declarer_payoff = bid_trick_count + self.make_bid_bonus  
+            else:
+                declarer_payoff = declarer_won_trick_count - bid_trick_count
+            
             defender_payoff = defender_won_trick_count
+            
+            # 3. Team_payoff ->  Individual payoff
             payoffs = []
             for player_id in range(4):
-                payoff = declarer_payoff if player_id % 2 == declarer.player_id % 2 else defender_payoff
+                if player_id % 2 == declarer.player_id % 2:
+                    payoff = declarer_payoff  
+                else:
+                    payoff = defender_payoff
                 payoffs.append(payoff)
         else:
             payoffs = [0, 0, 0, 0]
