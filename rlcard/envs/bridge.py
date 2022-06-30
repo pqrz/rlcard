@@ -468,7 +468,7 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
             #    break
             if isinstance(move, PlayCardMove):
                 break
-            elif isinstance(move, [MakePassMove, MakeBidMove]):
+            elif isinstance(move, CallMove):
                 bidding_rep[bidding_rep_index] = move.action.action_id          # check: move.action.action_id ?
                 # bidding_rep_index += 1
 
@@ -476,7 +476,7 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
         # 3.3 Last bid_amount representation
         last_bid_rep = np.zeros(self.last_bid_rep_size, dtype=int)
         last_move = game.round.move_sheet[-1]
-        if isinstance(last_move, [MakePassMove, MakeBidMove]):
+        if isinstance(last_move, CallMove):
             last_bid_rep[last_move.action.action_id - ActionEvent.no_bid_action_id] = 1
 
         
