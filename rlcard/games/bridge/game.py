@@ -14,6 +14,30 @@ from .utils.action_event import ActionEvent, CallActionEvent, PlayCardAction
 
 
 '''
+# Tarneeb Strucute
+                        round_1    
+                     /  
+          Fatiyeh_1  -  round_2
+        /            \
+       /                round_3               
+      /
+Game  -   Fatiyeh_2
+      \
+       \ 
+          Fatiyeh_3
+          
+                         (there are 13 rounds / Fatiyeh)
+                         
+          (there are those no.
+           of Fatiyah untill one of the team
+           reaches terrminal score of 41
+           and is declared as the winner)
+          
+(there is 1 game)
+'''
+
+
+'''
 Entry point: 
     *Game 
     (main calls round.py and maintains state)
