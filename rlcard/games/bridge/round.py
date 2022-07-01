@@ -34,11 +34,15 @@ class BridgeRound:
 
 	@property
 	def dealer_id(self) -> int:
+		#print('Dealer ID / ', self.tray.dealer_id)
 		return self.tray.dealer_id
 
+	# If Bridge
+	'''
 	@property
 	def vul(self):
 		return self.tray.vul
+	'''
 
 	@property
 	def board_id(self) -> int:
@@ -103,7 +107,7 @@ class BridgeRound:
 		
 		# 4. Init move sheet
 		self.move_sheet: List[BridgeMove] = []
-		import pd; pdb.set_trace()
+		#import pdb; pdb.set_trace()
 		self.move_sheet.append(DealHandMove(dealer=self.players[dealer_id], shuffled_deck=self.dealer.shuffled_deck))
 
 	def is_bidding_over(self) -> bool:
@@ -194,18 +198,20 @@ class BridgeRound:
 		output = None
 		"""
 		# when current_player takes CallActionEvent step, the move is recorded and executed
+		#import pdb; pdb.set_trace()
 		current_player = self.players[self.current_player_id]
 		if isinstance(action, PassAction):
 			self.move_sheet.append(MakePassMove(current_player))
 		elif isinstance(action, BidAction):
-			self.doubling_cube = 1
+			#self.doubling_cube = 1
 			make_bid_move = MakeBidMove(current_player, action)
 			self.contract_bid_move = make_bid_move
 			self.move_sheet.append(make_bid_move)
 
-		if self.is_bidding_over():
-			if not self.is_over():
-				self.current_player_id = self.get_left_defender().player_id
+		#if self.is_bidding_over():
+		if not self.is_over():
+			#self.current_player_id = self.get_left_defender().player_id
+			self.current_player_id = (self.current_player_id + 1) % 4
 	
 	def play_card(self, action: PlayCardAction):
 		"""
@@ -217,6 +223,8 @@ class BridgeRound:
 		current_player = self.players[self.current_player_id]
 		self.move_sheet.append(PlayCardMove(current_player, action))
 		card = action.card
+		#print('   Curret Player / ', self.current_player_id)
+		#print('   		Card / ', card)
 		current_player.remove_card_from_hand(card=card)
 		self.play_card_count += 1
 		# update current_player_id

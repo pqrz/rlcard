@@ -60,6 +60,7 @@ class Env(object):
 		'''
 		state, player_id = self.game.init_game()
 		self.action_recorder = []
+		#import pdb; pdb.set_trace()
 		return self._extract_state(state), player_id
 
 	def step(self, action, raw_action=False):
@@ -137,8 +138,11 @@ class Env(object):
 		state, player_id = self.reset()
 
 		# Loop to play the game
+		#if player_id==0:
+		#	import pdb; pdb.set_trace()
 		trajectories[player_id].append(state)
 		while not self.is_over():
+			#print('\nplayer_id:', player_id)
 			# Agent plays
 			#import pdb; pdb.set_trace()
 			if not is_training:

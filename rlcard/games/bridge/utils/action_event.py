@@ -34,10 +34,19 @@ e.g.  3		->	  <object> PlayCardAction(card=card)
 # Interface: for all actions
 class ActionEvent(object):	# Interface
 
-	no_bid_action_id = pass_action_id = 0
+	#no_bid_action_id = 
+	'''
 	first_bid_action_id = 1
-	last_bid_action_id = 28
-	first_play_card_action_id = 29
+	last_bid_action_id = (7*5)                    #
+	pass_action_id = 36
+	first_play_card_action_id = 37
+	last_play_card_action_id = 37 + 52 - 1
+	'''
+	first_bid_action_id = 0
+	last_bid_action_id = (7*5) - 1
+	pass_action_id = 35
+	first_play_card_action_id = 36
+	last_play_card_action_id = 36 + 52 - 1
 
 	def __init__(self, action_id: int):
 		self.action_id = action_id
@@ -54,14 +63,25 @@ class ActionEvent(object):	# Interface
 		# Action_id -> Action_object
 		# e.g. Input = 3
 		#	   Output = <object> PlayCardAction(card=card)
+		
+		#import pd; pdb.set_trace()
+		#print ('ActionID : ', action_id)
+		# If action_id == 36
 		if action_id == ActionEvent.pass_action_id:
 			return PassAction()
+		
+		# If 1 <= action_id <= 35
 		elif ActionEvent.first_bid_action_id <= action_id <= ActionEvent.last_bid_action_id:
-			bid_amount = 7 + (action_id - 1) % 7
-			bid_suit_id = (action_id) % 7
-			bid_suit = BridgeCard.suits[bid_suit_id] if bid_suit_id < 4 else None
+			#bid_amount = 7 + (action_id - 1) % 7
+			#bid_suit_id = (action_id - 1) // 7
+
+			bid_amount = 7 + (action_id) % 7
+			bid_suit_id = (action_id) // 7
+			bid_suit = BridgeCard.suits[bid_suit_id] if bid_suit_id < 4 else "nt"               # [c, d, s, h, nt]
 			return BidAction(bid_amount, bid_suit)
-		elif ActionEvent.first_play_card_action_id <= action_id < ActionEvent.first_play_card_action_id + 52:
+		
+		# If 37 <= action_id <= 88
+		elif ActionEvent.first_play_card_action_id <= action_id <= ActionEvent.last_play_card_action_id:
 			card_id = action_id - ActionEvent.first_play_card_action_id
 			card = BridgeCard.card(card_id=card_id)
 			return PlayCardAction(card=card)
@@ -72,7 +92,8 @@ class ActionEvent(object):	# Interface
 	def get_num_actions():
 		''' Return the total number of possible actions in the game
 		'''
-		return 1 + 35 + 3 + 52	# no_bid, 35 bids, pass, dbl, rdl, 52 play_card
+		#return 88  # 1 + 35 + 3 + 52	# no_bid, 35 bids, pass, dbl, rdl, 52 play_card
+		return 88  # 1 + 35 + 3 + 52	# no_bid, 35 bids, pass, dbl, rdl, 52 play_card
 
 
 class CallActionEvent(ActionEvent):	 # Interface
@@ -96,8 +117,8 @@ class BidAction(CallActionEvent):
 
 	def __init__(self, bid_amount: int, bid_suit: str or None):
 		suits = BridgeCard.suits
-		if bid_suit and bid_suit not in suits:
-			raise Exception(f'BidAction has invalid suit: {bid_suit}')
+		#if bid_suit and bid_suit not in suits:
+		#	raise Exception(f'BidAction has invalid suit: {bid_suit}')
 		if bid_suit in suits:
 			bid_suit_id = suits.index(bid_suit)
 		else:
@@ -108,8 +129,9 @@ class BidAction(CallActionEvent):
 		'''
 		
 		#if Tarneeb:
-		bid_action_id = bid_suit_id*7 + (bid_amount - 7 + 1)
-		super().__init__(action_id=bid_action_id)
+		#bid_action_id = bid_suit_id*7 + (bid_amount - 7 + 1)
+		bid_action_id = bid_suit_id*7 + (bid_amount - 7)
+		super().__init__(action_id = bid_action_id)
 		self.bid_amount = bid_amount
 		self.bid_suit = bid_suit
 
