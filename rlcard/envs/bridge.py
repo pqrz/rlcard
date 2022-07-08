@@ -371,6 +371,7 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
 		Returns:
 			(numpy.array): The extracted state
 		'''
+		#import pdb; pdb.set_trace()
 		extracted_state = {}
 		legal_actions: OrderedDict = self.get_legal_actions(game=game)
 		raw_legal_actions = list(legal_actions.keys())
@@ -528,9 +529,12 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
 		# 3.5 Final contract / Trump suite representation		  : Reformat "contract_bid_move.action.bid_suit"	 ->	  State representation
 		bid_amount_rep = np.zeros(8, dtype=int)
 		trump_suit_rep = np.zeros(5, dtype=int)
-		if game.round.is_bidding_over() and (not game.is_over()) and (game.round.play_card_count == 0):
+		#if game.round.is_bidding_over() and (not game.is_over()) and (game.round.play_card_count == 0):
+		if game.round.is_bidding_over() and (not game.is_over()):
 			contract_bid_move = game.round.contract_bid_move
+			#print('contract_bid_move:', contract_bid_move)
 			if contract_bid_move:
+				#import pdb; pdb.set_trace()
 				bid_amount_rep[contract_bid_move.action.bid_amount-7] = 1
 				
 				bid_suit = contract_bid_move.action.bid_suit

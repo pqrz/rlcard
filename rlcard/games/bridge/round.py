@@ -113,6 +113,7 @@ class BridgeRound:
 	def is_bidding_over(self) -> bool:
 		''' Return whether the current bidding is over
 		'''
+		#import pdb; pdb.set_trace()
 		is_bidding_over = True
 		if len(self.move_sheet) < 5:
 			is_bidding_over = False

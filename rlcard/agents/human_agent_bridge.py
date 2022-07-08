@@ -2,7 +2,8 @@ import numpy as np
 from rlcard.games.bridge.utils.bridge_card import BridgeCard
 from rlcard.games.bridge.utils.action_event import ActionEvent
 
-class RandomAgent(object):
+
+class HumanAgentBridge(object):
 	''' A random agent. Random agents is for running toy examples on the card games
 	'''
 
@@ -26,9 +27,24 @@ class RandomAgent(object):
 		Returns:
 			action (int): The action predicted (randomly chosen) by the random agent
 		'''
+		#legal_actions = list(state['legal_actions'].keys())
+		#print()
+		#print('Legal actions:')
+		#for idx, act in enumerate(legal_actions):
+		#	print(f'{idx}. {act}')
+		#user_inp = input('Enter your choice: ')
+		#return legal_actions[int(user_inp)]
+		#return np.random.choice()
+		
+		#print(state['raw_obs'])
+		#import pdb; pdb.set_trace()
 		if self.verbose:
 			_print_state(state)
-		choice = np.random.choice(list(state['legal_actions'].keys()))
+		action = int(input('>> You choose action (integer): '))
+		while action < 0 or action >= len(state['legal_actions']):
+			print('Action illegel...')
+			action = int(input('>> Re-choose action (integer): '))
+		choice = state['raw_legal_actions'][action]
 		if self.verbose:
 			print('Final Choice:', choice)
 		return choice
@@ -88,7 +104,7 @@ def _print_state(state):
 		suits = ['C', 'D', 'H', 'S']
 		ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
 		all_cards = [r+s for s in suits for r in ranks]
-		print('\n-------------- STATE / Random Agent --------------')
+		print('\n-------------- STATE / Human Agent  --------------')
 		#for pid, i in enumerate(range(0, len(l1_hand_rep), 52)):
 		print(f'1. Your Hand Rep:	   ', [all_cards[idx%52] for idx, x in enumerate(l1_hand_rep) if x])
 		# import pdb; pdb.set_trace()
@@ -119,7 +135,6 @@ def _print_state(state):
 	except:
 		import pdb; pdb.set_trace()
 		
-
 def num_to_name(action_id):
 	#import pdb; pdb.set_trace()
 	if ActionEvent.first_bid_action_id <= action_id <= ActionEvent.last_bid_action_id:

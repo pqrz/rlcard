@@ -56,7 +56,8 @@ class DQNAgent(object):
 				 train_every=1,
 				 mlp_layers=None,
 				 learning_rate=0.00005,
-				 device=None):
+				 device=None,
+				 verbose=False):
 
 		'''
 		Q-Learning algorithm for off-policy TD control using Function Approximation.
@@ -90,6 +91,7 @@ class DQNAgent(object):
 		self.batch_size = batch_size
 		self.num_actions = num_actions
 		self.train_every = train_every
+		self.verbose = verbose
 
 		# Torch device
 		if device is None:
@@ -141,6 +143,8 @@ class DQNAgent(object):
 		Returns:
 			action (int): an action id
 		'''
+		if self.verbose:
+			_print_state(state)
 		q_values = self.predict(state)
 		epsilon = self.epsilons[min(self.total_t, self.epsilon_decay_steps-1)]
 		legal_actions = list(state['legal_actions'].keys())
@@ -149,7 +153,10 @@ class DQNAgent(object):
 		probs[best_action_idx] += (1.0 - epsilon)
 		action_idx = np.random.choice(np.arange(len(probs)), p=probs)
 
-		return legal_actions[action_idx]
+		choice = legal_actions[action_idx]
+		if self.verbose:
+			print('Final Choice:', choice)
+		return choice
 
 	def eval_step(self, state):
 		''' Predict the action for evaluation purpose.
@@ -418,3 +425,55 @@ class Memory(object):
 		'''
 		samples = random.sample(self.memory, self.batch_size)
 		return map(np.array, zip(*samples))
+
+		
+
+def _print_state(state):
+	try:
+		l = state['obs']
+		l1_hand_rep			  = l[0:208]
+		l2_pile_rep			  = l[208:415+1]
+		l3_otherplayer_rep	  = l[416:467+1]
+
+		l4_highest_bidder	   = l[468:471+1]
+		l5_current_player	  = l[472:475+1]
+
+		l6_bidding_phase	  = l[476:476+1]
+		l7_bidding_amount_rep = l[477:620+1]
+		l8_last_bid_amt_rep	  = l[621:656+1]
+
+		l9_contract_bid_rep	  = l[657:664+1]
+		l10_contract_trump_rep= l[665:]
+
+		suits = ['C', 'D', 'H', 'S']
+		ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+		all_cards = [r+s for s in suits for r in ranks]
+		print('\n-------------- STATE / DQN Agent --------------')
+		#for pid, i in enumerate(range(0, len(l1_hand_rep), 52)):
+		print(f'1. Your Hand Rep:	   ', [all_cards[idx%52] for idx, x in enumerate(l1_hand_rep) if x])
+		# import pdb; pdb.set_trace()
+		print('2. Pile Rep:			   ', [all_cards[idx%52] for idx, x in enumerate(l2_pile_rep) if x])
+		print('3. Other Player Rep:	   ', [all_cards[idx] for idx, x in enumerate(l3_otherplayer_rep) if x])
+		print('4. Highest Bidder:	   ', l4_highest_bidder)
+		print('5. Current Player:	   ', l5_current_player)
+		print('6. Is Bidding phase:	   ', l6_bidding_phase)
+		print('7. Bidding amount Rep:  ', [idx for idx, x in enumerate(l7_bidding_amount_rep) if x])
+		
+		'''
+		bids = ['7', '8', '9', '10', '11', '12', '13']
+		suits = ['C', 'D', 'H', 'S', 'NT']
+		all_bid = []
+		for p in ['p0', 'p1', 'p2', 'p3']:
+			all_bid += [p+'_'+'pass']
+			for s in suits:
+				for amt in bids:
+					all_bid	 += [p+'_'+s+'_'+amt]
+		'''
+		print('8. Last bid amount rep: ', [idx for idx, x in enumerate(l8_last_bid_amt_rep) if x])
+		print('9. Contract Bid rep:	   ', l9_contract_bid_rep)
+		print('10. Contract Trump rep: ', l10_contract_trump_rep)
+		
+		print()
+		print('Possible Legal Actions:', state['legal_actions'])
+	except:
+		import pdb; pdb.set_trace()
