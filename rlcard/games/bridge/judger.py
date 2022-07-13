@@ -56,28 +56,33 @@ class BridgeJudger:
 					if isinstance(move, MakeBidMove):
 						last_make_bid_move = move
 						break
-
-				first_bid_action_id = ActionEvent.first_bid_action_id
 				
-				##		   1.2.2 legal actions = [9, 35]   ............ [last_make_bid_move.action.action_id + 1,	first_bid_action_id + 35]
-				# next_bid_action_id = (last_make_bid_move.action.action_id - 1)%7 + 1 + 1 if last_make_bid_move else first_bid_action_id
-				next_bid_action_id = (last_make_bid_move.action.action_id)%7 + 1 if last_make_bid_move else first_bid_action_id
-				# +1 = O-based-indexing  ->  1-based-indexing
-				# +1 = next card
-				# for bid_action_id in range(next_bid_action_id, first_bid_action_id + 35):
-				#for bid_action_id in range(next_bid_action_id, 7+1):
-				for bid_action_id in range(next_bid_action_id, 7):
-					action = BidAction.from_action_id(action_id=bid_action_id)
-					legal_actions.append(action)
+				'''
+				A player who does not wish to bid at their turn can pass. Once you have passed you drop out of the bidding - you cannot bid again on a later turn.
+				'''
+				is_eligible = not current_player.has_passed_bid
+				if is_eligible:
+					first_bid_action_id = ActionEvent.first_bid_action_id
 					
-					action = BidAction.from_action_id(action_id=bid_action_id + 7)
-					legal_actions.append(action)
-					
-					action = BidAction.from_action_id(action_id=bid_action_id + 14)
-					legal_actions.append(action)
-					
-					action = BidAction.from_action_id(action_id=bid_action_id + 21)
-					legal_actions.append(action)
+					##		   1.2.2 legal actions = [9, 35]   ............ [last_make_bid_move.action.action_id + 1,	first_bid_action_id + 35]
+					# next_bid_action_id = (last_make_bid_move.action.action_id - 1)%7 + 1 + 1 if last_make_bid_move else first_bid_action_id
+					next_bid_action_id = (last_make_bid_move.action.action_id)%7 + 1 if last_make_bid_move else first_bid_action_id
+					# +1 = O-based-indexing  ->  1-based-indexing
+					# +1 = next card
+					# for bid_action_id in range(next_bid_action_id, first_bid_action_id + 35):
+					#for bid_action_id in range(next_bid_action_id, 7+1):
+					for bid_action_id in range(next_bid_action_id, 7):
+						action = BidAction.from_action_id(action_id=bid_action_id)
+						legal_actions.append(action)
+						
+						action = BidAction.from_action_id(action_id=bid_action_id + 7)
+						legal_actions.append(action)
+						
+						action = BidAction.from_action_id(action_id=bid_action_id + 14)
+						legal_actions.append(action)
+						
+						action = BidAction.from_action_id(action_id=bid_action_id + 21)
+						legal_actions.append(action)
 
 			# 2. If phase = Card play
 			else:

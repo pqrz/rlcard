@@ -57,10 +57,12 @@ class BridgeEnv(Env):
 	''' Bridge Environment
 	'''
 	def __init__(self, config):
+		#import pdb; pdb.set_trace()
 		self.name = 'bridge'
-		self.game = Game()
+		self.verbose = config.pop('verbose', False)
+		self.game = Game(verbose=self.verbose)
 		super().__init__(config=config)
-		self.bridgePayoffDelegate = DefaultBridgePayoffDelegate()
+		self.bridgePayoffDelegate = DefaultBridgePayoffDelegate(self.verbose)
 		self.bridgeStateExtractor = DefaultBridgeStateExtractor()
 		state_shape_size = self.bridgeStateExtractor.get_state_shape_size()
 		self.state_shape = [[1, state_shape_size] for _ in range(self.num_players)]
@@ -144,8 +146,9 @@ class BridgePayoffDelegate(object):
 
 class DefaultBridgePayoffDelegate(BridgePayoffDelegate):
 
-	def __init__(self):
+	def __init__(self, verbose):
 		self.make_bid_bonus = 2
+		self.verbose = verbose
 
 	def get_payoffs(self, game: BridgeGame):
 		''' 
@@ -251,6 +254,12 @@ class DefaultBridgePayoffDelegate(BridgePayoffDelegate):
 				payoffs.append(payoff)
 		else:
 			payoffs = [0, 0, 0, 0]
+		if self.verbose:
+			print('\nPayoffs:')
+			print('		Player 1:', payoffs[0])
+			print('		Player 2:', payoffs[1])
+			print('		Player 3:', payoffs[2])
+			print('		Player 4:', payoffs[3])
 		return np.array(payoffs)
 
 
@@ -346,20 +355,24 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
 		
 		# 3.3 Last bid_amount representation
 		#state_shape_size += self.last_bid_rep_size			# 9.  last_bid_rep_size			: Rep of last bid amount
-		state_shape_size += (1 +  7*5)      				#															   e.g. [px_pass, px_7_c, ... px_13_c,
+		#state_shape_size += (1 +  7*5)      				#															   e.g. [px_pass, px_7_c, ... px_13_c,
 		                     								#															                  px_7_d, ... px_13_d, 
 		                     								#															                  px_7_s, ... px_13_s, 
 		                     								#															                  px_7_h, ... px_13_h
 		                     								#															                  px_7_nt, ... px_13_nt ]
 
 		# 3.4 Final contract / bid_amount representation
-		state_shape_size += 8							   # 10. bid_amount_rep_size	   : Rep of current bid amount
-														   #															  e.g. [py_pass, py_7, py_8, py_9, py_10, py_11, py_12, py_13]
+		state_shape_size += 7							   # 10. bid_amount_rep_size	   : Rep of current bid amount
+														   #															  e.g. [py_7, py_8, py_9, py_10, py_11, py_12, py_13]
 		
 		# 3.5 Final contract / Trump suite representation
 		state_shape_size += 5							   # 11. trump_suit_rep_size	   : Rep of trump suite
 														   #																	Spade, Diamond, Club, Hearts, No-Trump
 														   #															   e.g. [0	  , 1	   , 0	 , 0	 , 0]
+		
+		# 3.6 Final contract / Highest bidder representation
+		state_shape_size += 4
+		
 		return state_shape_size
 
 	def extract_state(self, game: BridgeGame):
@@ -465,7 +478,7 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
 
 		
 		# 2) Player representation
-		# 2.1 Player / Highest bidder
+		# 2.1 Player / Dealer Rep
 		dealer_rep = np.zeros(4, dtype=int)
 		# If Bridge:
 		'''
@@ -484,7 +497,7 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
 
 		# 3) Bidding Phase representation
 		# 3.1 Bidding phase
-		is_bidding_rep = np.array([1] if game.round.is_bidding_over() else [0])			  # Reformat:  "game.round.is_bidding_over()"	->	 State representation
+		is_bidding_over_rep = np.array([1] if game.round.is_bidding_over() else [0])			  # Reformat:  "game.round.is_bidding_over()"	->	 State representation
 
 		
 		# 3.2 Bid amount representation
@@ -506,33 +519,39 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
 		
 		# If Tarneeb:
 		# Highest bid till now
-		if len(game.round.move_sheet):
-			this_round_moves = len(game.round.move_sheet) % 4
-			for move in game.round.move_sheet[::-1]:
-				if isinstance(move, MakeBidMove):
-					#import pdb; pdb.set_trace()
-					bidding_rep[move.player.player_id][move.action.action_id-1] = 1
-					#bidding_rep[current_player_id] = move.action.action_id			 # check: move.action.action_id ?
-					# bidding_rep_index += 1
-					break
+		# Last 3 bids till now
+		if not game.round.is_bidding_over():
+			if len(game.round.move_sheet):
+				# this_round_moves = len(game.round.move_sheet) % 4
+				#import pdb; pdb.set_trace()
+				# for move in game.round.move_sheet[-this_round_moves:]:
+				for move in game.round.move_sheet[-3:]:
+					if isinstance(move, CallMove):
+						#import pdb; pdb.set_trace()
+						bidding_rep[move.player.player_id][move.action.action_id] = 1
+						#bidding_rep[current_player_id] = move.action.action_id			 # check: move.action.action_id ?
+						# bidding_rep_index += 1
+						#break
 		#bidding_rep = np.concatenate(bidding_rep)
 		
 		# 3.3 Last bid_amount representation
-		last_bid_rep = np.zeros(self.last_bid_rep_size, dtype=int)
-		last_move = game.round.move_sheet[-1]
-		if isinstance(last_move, CallMove):
-			last_bid_rep[last_move.action.action_id-1] = 1			   # check: ActionEvent.no_bid_action_id ?
+		#last_bid_rep = np.zeros(self.last_bid_rep_size, dtype=int)
+		#last_move = game.round.move_sheet[-1]
+		#if isinstance(last_move, CallMove):
+		#	last_bid_rep[last_move.action.action_id-1] = 1			   # check: ActionEvent.no_bid_action_id ?
 
 		
 		# 3.4 Final contract / bid_amount representation		  : Reformat "contract_bid_move.action.bid_amount"	 ->	  State representation
 		# & 
 		# 3.5 Final contract / Trump suite representation		  : Reformat "contract_bid_move.action.bid_suit"	 ->	  State representation
-		bid_amount_rep = np.zeros(8, dtype=int)
+		bid_amount_rep = np.zeros(7, dtype=int)
 		trump_suit_rep = np.zeros(5, dtype=int)
+		highest_bidder_rep = np.zeros(4, dtype=int)
 		#if game.round.is_bidding_over() and (not game.is_over()) and (game.round.play_card_count == 0):
 		if game.round.is_bidding_over() and (not game.is_over()):
 			contract_bid_move = game.round.contract_bid_move
 			#print('contract_bid_move:', contract_bid_move)
+			#import pdb; pdb.set_trace()
 			if contract_bid_move:
 				#import pdb; pdb.set_trace()
 				bid_amount_rep[contract_bid_move.action.bid_amount-7] = 1
@@ -543,6 +562,8 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
 				except:
 					import pdb; pdb.set_trace()
 				trump_suit_rep[bid_suit_index] = 1
+				#import pdb; pdb.set_trace()
+				highest_bidder_rep[game.round.highest_bidder] = 1
 
 		# Concatenate individual state list	 ->	 one master list 
 		rep = []
@@ -552,16 +573,17 @@ class DefaultBridgeStateExtractor(BridgeStateExtractor):
 		#'''
 		rep.append(dealer_rep)
 		rep.append(current_player_rep)
-		rep.append(is_bidding_rep)
+		rep.append(is_bidding_over_rep)
 		rep += bidding_rep
-		rep.append(last_bid_rep)
+		#rep.append(last_bid_rep)
 		#'''
 		rep.append(bid_amount_rep)
 		rep.append(trump_suit_rep)
+		rep.append(highest_bidder_rep)
 
 		#rep = [np.concatenate(item) for item in rep]
 		obs = np.concatenate(rep)
-		
+		#import pdb; pdb.set_trace()
 		
 		extracted_state['obs'] = obs
 		extracted_state['legal_actions'] = legal_actions

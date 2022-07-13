@@ -58,7 +58,7 @@ class BridgeRound:
 			result = 'make bid'
 		return result
 
-	def __init__(self, num_players: int, board_id: int, np_random):
+	def __init__(self, num_players: int, board_id: int, np_random, verbose):
 		''' Initialize the round class
 
 			The round class maintains the following instances:
@@ -80,23 +80,29 @@ class BridgeRound:
 			board_id: int
 			np_random
 		'''
+		self.verbose = verbose
 		
 		# 1. Board init
 		tray = Tray(board_id=board_id)
-		
 		# 2. Dealer init
 		# If Bridge:
 		dealer_id = tray.dealer_id
+		if self.verbose:
+			print('Dealer ID:', dealer_id+1)
 		self.tray = tray
 		self.np_random = np_random
 		# If Bridge:
-		self.dealer: BridgeDealer = BridgeDealer(self.np_random)
-		
+		self.dealer: BridgeDealer = BridgeDealer(self.np_random, self.verbose)
+		'''
+		To begin setup, a dealer must be chosen, this is done randomly. The dealer will shuffle the cards and deal 13 cards to each player one at a time. 
+		Bidding will begin first with the player to the right of the dealer and continues counterclockwise around the group.
+		'''
+
 		# 3. Player init
 		self.players: List[BridgePlayer] = []
 		for player_id in range(num_players):
 			self.players.append(BridgePlayer(player_id=player_id, np_random=self.np_random))
-		self.current_player_id: int = dealer_id
+		self.current_player_id: int = (dealer_id + 1)%4
 
 		# If Bridge:
 		#self.doubling_cube: int = 1
@@ -109,6 +115,7 @@ class BridgeRound:
 		self.move_sheet: List[BridgeMove] = []
 		#import pdb; pdb.set_trace()
 		self.move_sheet.append(DealHandMove(dealer=self.players[dealer_id], shuffled_deck=self.dealer.shuffled_deck))
+		self.highest_bidder = None
 
 	def is_bidding_over(self) -> bool:
 		''' Return whether the current bidding is over
@@ -202,11 +209,16 @@ class BridgeRound:
 		#import pdb; pdb.set_trace()
 		current_player = self.players[self.current_player_id]
 		if isinstance(action, PassAction):
+			#import pdb; pdb.set_trace()
+			current_player.has_passed_bid = True
+			self.players[self.current_player_id] = current_player
+			
 			self.move_sheet.append(MakePassMove(current_player))
 		elif isinstance(action, BidAction):
 			#self.doubling_cube = 1
 			make_bid_move = MakeBidMove(current_player, action)
 			self.contract_bid_move = make_bid_move
+			self.highest_bidder = self.current_player_id
 			self.move_sheet.append(make_bid_move)
 
 		#if self.is_bidding_over():
@@ -248,6 +260,8 @@ class BridgeRound:
 					trick_winner = trick_player
 			self.current_player_id = trick_winner.player_id
 			self.won_trick_counts[trick_winner.player_id % 2] += 1
+			if self.verbose:
+				print('\n ************************************** ROUND END (Winner: Player {})***********************************'.format(self.current_player_id+1))
 		else:
 			self.current_player_id = (self.current_player_id + 1) % 4
 

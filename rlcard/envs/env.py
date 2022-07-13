@@ -151,6 +151,8 @@ class Env(object):
 				action = self.agents[player_id].step(state)
 
 			# Environment steps
+			#if self.verbose:
+			#	import pdb; pdb.set_trace()
 			next_state, next_player_id = self.step(action, self.agents[player_id].use_raw)
 			# Save action
 			trajectories[player_id].append(action)
