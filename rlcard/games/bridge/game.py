@@ -84,9 +84,9 @@ class BridgeGame:
 		state = self.get_state(player_id=current_player_id)
 		if self.verbose:
 			print('\nSeating Order:')
-			print('    p1')
-			print('p2      p4')
-			print('    p3')
+			print('```p1```')
+			print('p2````p4')
+			print('```p3```')
 			print('\n**************************************** Game Start ****************************************')
 		return state, current_player_id
 

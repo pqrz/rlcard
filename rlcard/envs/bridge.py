@@ -245,21 +245,33 @@ class DefaultBridgePayoffDelegate(BridgePayoffDelegate):
 				  
 			
 			# 3. Team_payoff ->	 Individual payoff
+			team_wins = []
 			payoffs = []
 			for player_id in range(4):
 				if player_id % 2 == declarer.player_id % 2:
+					wins = declarer_won_trick_count
 					payoff = declarer_payoff  
 				else:
+					wins = defender_won_trick_count
 					payoff = defender_payoff
 				payoffs.append(payoff)
+				team_wins.append(wins)
 		else:
+			team_wins = [0, 0, 0, 0]
 			payoffs = [0, 0, 0, 0]
 		if self.verbose:
+			print('\nWinning Trick Count:')
+			print('*		Player 1:', team_wins[0])
+			print('*		Player 2:', team_wins[1])
+			print('*		Player 3:', team_wins[2])
+			print('*		Player 4:', team_wins[3])
+
 			print('\nPayoffs:')
-			print('		Player 1:', payoffs[0])
-			print('		Player 2:', payoffs[1])
-			print('		Player 3:', payoffs[2])
-			print('		Player 4:', payoffs[3])
+			print('*		Player 1:', payoffs[0])
+			print('*		Player 2:', payoffs[1])
+			print('*		Player 3:', payoffs[2])
+			print('*		Player 4:', payoffs[3])
+			print()
 		return np.array(payoffs)
 
 

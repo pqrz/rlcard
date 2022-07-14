@@ -41,7 +41,9 @@ class HumanAgentBridge(object):
 		#import pdb; pdb.set_trace()
 		if self.verbose:
 			_print_state(state, self.name)
-		action = int(input('>> You choose action (integer): '))
+		# action = int(input('>> You choose action (integer): '))
+		print('>> You choose action (integer):')
+		action = int(input())
 		while action < 0 or action >= len(state['legal_actions']):
 			print('Action illegel...')
 			action = int(input('>> Re-choose action (integer): '))
