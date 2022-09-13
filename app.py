@@ -4,9 +4,9 @@ import subprocess
 import time			 #You don't need this. Just included it so you can see the output stream.
 
 proc = subprocess.Popen(
-	['python', 'demo_v2_gameplay.py'],
+	['python', 'demo_v4_gameplay_game.py'],
 	# ['python', 'hello.py'],
-	shell=True,
+	# shell=True,
 	stdout=subprocess.PIPE,
 	stdin=subprocess.PIPE
 )
@@ -26,6 +26,7 @@ def write_stdin():
 def index():
 	def inner():
 		#for line in iter(proc.stdout.readline,''):
+		# import pdb; pdb.set_trace()
 		for line in proc.stdout:
 			time.sleep(.01)
 			#import pdb; pdb.set_trace()
